@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snake Game</title>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f5f5f5;
+        overflow: hidden;
+      }
+
+      canvas {
+        border: 1px solid #ddd;
+      }
+
+      #game-over-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+      }
+
+      #modal-content {
+        background-color: #ffffff;
+        padding: 20px;
+        text-align: center;
+        border-radius: 10px;
+      }
+
+      #modal-content h2 {
+        color: #333333;
+        margin-bottom: 10px;
+      }
+
+      #score {
+        font-size: 18px;
+        margin-bottom: 10px;
+      }
+
+      #reset-button {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f5f5f5;
+        overflow: hidden;
+      }
+
+      #container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #start-button,
+      #back-button {
+        margin-top: 20px; /* Adjust the margin as needed */
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <canvas id="snakeCanvas" width="400" height="400"></canvas>
+
+      <div id="game-over-modal">
+        <div id="modal-content">
+          <h2 id="modal-message"></h2>
+          <div id="score"></div>
+          <button id="reset-button">Play Again</button>
+        </div>
+      </div>
+
+      <!-- Add Start button to initiate snake movement -->
+      <button id="start-button" onclick="startGame()">Start Game</button>
+
+      <!-- Add Back button with an onclick event to redirect to the homepage -->
+      <button id="back-button" onclick="window.location.href='../index.html'">
+        Back to Homepage
+      </button>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const canvas = document.getElementById("snakeCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const boxSize = 20;
+        const canvasSize = 400;
+
+        let snake = [{ x: 10, y: 10 }];
+        let food = { x: 15, y: 15 };
+        let direction = "right";
+        let score = 0;
+
+        function draw() {
+          ctx.clearRect(0, 0, canvasSize, canvasSize);
+
+          // Draw snake
+          ctx.fillStyle = "#4CAF50";
+          snake.forEach((segment) => {
+            ctx.fillRect(
+              segment.x * boxSize,
+              segment.y * boxSize,
+              boxSize,
+              boxSize
+            );
+          });
+
+          // Draw food
+          ctx.fillStyle = "#FF0000";
+          ctx.fillRect(food.x * boxSize, food.y * boxSize, boxSize, boxSize);
+
+          // Draw score
+          ctx.fillStyle = "#333333";
+          ctx.font = "20px Arial";
+          ctx.fillText("Score: " + score, 20, 30);
+        }
+
+        function move() {
+          const head = { ...snake[0] };
+
+          switch (direction) {
+            case "up":
+              head.y =
+                (head.y - 1 + canvasSize / boxSize) % (canvasSize / boxSize);
+              break;
+            case "down":
+              head.y = (head.y + 1) % (canvasSize / boxSize);
+              break;
+            case "left":
+              head.x =
+                (head.x - 1 + canvasSize / boxSize) % (canvasSize / boxSize);
+              break;
+            case "right":
+              head.x = (head.x + 1) % (canvasSize / boxSize);
+              break;
+          }
+
+          snake.unshift(head);
+
+          // Check if snake ate the food
+          if (head.x === food.x && head.y === food.y) {
+            score++;
+            generateFood();
+          } else {
+            snake.pop();
+          }
+        }
+
+        function generateFood() {
+          food = {
+            x: Math.floor(Math.random() * (canvasSize / boxSize)),
+            y: Math.floor(Math.random() * (canvasSize / boxSize)),
+          };
+
+          // Ensure food doesn't appear on the snake
+          while (isFoodOnSnake()) {
+            food = {
+              x: Math.floor(Math.random() * (canvasSize / boxSize)),
+              y: Math.floor(Math.random() * (canvasSize / boxSize)),
+            };
+          }
+        }
+
+        function isFoodOnSnake() {
+          return snake.some(
+            (segment) => segment.x === food.x && segment.y === food.y
+          );
+        }
+
+        function checkCollision() {
+          const head = snake[0];
+          return (
+            head.x < 0 ||
+            head.x >= canvasSize / boxSize ||
+            head.y < 0 ||
+            head.y >= canvasSize / boxSize ||
+            isSnakeCollision()
+          );
+        }
+
+        function isSnakeCollision() {
+          const head = snake[0];
+          return snake
+            .slice(1)
+            .some((segment) => segment.x === head.x && segment.y === head.y);
+        }
+
+        function gameLoop() {
+          if (checkCollision()) {
+            showGameOverModal();
+          } else {
+            move();
+            draw();
+            setTimeout(gameLoop, 100);
+          }
+        }
+
+        function showGameOverModal() {
+          const modal = document.getElementById("game-over-modal");
+          const modalMessage = document.getElementById("modal-message");
+          const scoreDisplay = document.getElementById("score");
+
+          modalMessage.textContent = "Game Over!";
+          scoreDisplay.textContent = "Your Score: " + score;
+
+          modal.style.display = "flex";
+        }
+
+        function resetGame() {
+          // Reload the page
+          location.reload();
+        }
+
+        // Set initial food position
+        generateFood();
+
+        // Handle arrow key presses
+        document.addEventListener("keydown", function (event) {
+          let newDirection;
+
+          switch (event.key) {
+            case "ArrowUp":
+              newDirection = "up";
+              break;
+            case "ArrowDown":
+              newDirection = "down";
+              break;
+            case "ArrowLeft":
+              newDirection = "left";
+              break;
+            case "ArrowRight":
+              newDirection = "right";
+              break;
+          }
+
+          // Check if the new direction is valid (not opposite to the current direction)
+          if (
+            (newDirection === "up" && direction !== "down") ||
+            (newDirection === "down" && direction !== "up") ||
+            (newDirection === "left" && direction !== "right") ||
+            (newDirection === "right" && direction !== "left")
+          ) {
+            direction = newDirection;
+          }
+        });
+
+        // Handle reset button click
+        const resetButton = document.getElementById("reset-button");
+        resetButton.addEventListener("click", resetGame);
+
+        let gameStarted = false;
+
+        // Function to start the game
+        function startGame() {
+          if (!gameStarted) {
+            gameStarted = true;
+            gameLoop(); // Initiate the game loop
+          }
+        }
+
+        // Handle start button click
+        const startButton = document.getElementById("start-button");
+        startButton.addEventListener("click", startGame);
+      });
+    </script>
+  </body>
+</html>
