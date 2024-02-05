@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pac-Man Game</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #000;
+        color: #fff;
+        font-family: Arial, sans-serif;
+      }
+
+      #game-container {
+        position: relative;
+        width: 640px;
+        height: 480px;
+        margin: auto;
+        overflow: hidden;
+        border: 5px solid #fff; /* Boundary wall */
+      }
+
+      .pacman {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: yellow;
+        border-radius: 50%;
+        transition: transform 0.2s;
+        z-index: 1;
+      }
+
+      .wall {
+        position: absolute;
+        background-color: blue;
+        width: 40px;
+        height: 40px;
+      }
+
+      .dot {
+        width: 20px;
+        height: 20px;
+        background-color: white;
+        border-radius: 50%;
+        position: absolute;
+      }
+
+      #score {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-container">
+      <div id="score">Score: 0</div>
+    </div>
+
+    <script>
+      const gameContainer = document.getElementById("game-container");
+      const scoreElement = document.getElementById("score");
+
+      const pacman = document.createElement("div");
+      pacman.className = "pacman";
+      pacman.style.top = "80px"; // Adjusted initial position
+      pacman.style.left = "80px"; // Adjusted initial position
+      gameContainer.appendChild(pacman);
+
+      let dots = [];
+      let walls = [];
+      let score = 0;
+
+      function createDot(top, left) {
+        const dot = document.createElement("div");
+        dot.className = "dot";
+        dot.style.top = `${top}px`;
+        dot.style.left = `${left}px`;
+        gameContainer.appendChild(dot);
+        dots.push(dot);
+      }
+
+      function createWall(top, left) {
+        const wall = document.createElement("div");
+        wall.className = "wall";
+        wall.style.top = `${top}px`;
+        wall.style.left = `${left}px`;
+        gameContainer.appendChild(wall);
+        walls.push(wall);
+      }
+
+      function generateRandomMaze() {
+        // Clear previous maze
+        walls.forEach((wall) => wall.remove());
+        walls.length = 0;
+
+        // Create boundary walls
+        for (let i = 0; i < gameContainer.clientWidth / 40; i++) {
+          createWall(0, i * 40);
+          createWall((gameContainer.clientHeight / 40 - 1) * 40, i * 40);
+        }
+
+        for (let i = 1; i < gameContainer.clientHeight / 40 - 1; i++) {
+          createWall(i * 40, 0);
+          createWall(i * 40, (gameContainer.clientWidth / 40 - 1) * 40);
+        }
+
+        // Randomly generate walls inside the boundary
+        for (let i = 0; i < 10; i++) {
+          createWall(
+            Math.floor(Math.random() * (gameContainer.clientHeight / 40 - 2)) *
+              40 +
+              40,
+            Math.floor(Math.random() * (gameContainer.clientWidth / 40 - 2)) *
+              40 +
+              40
+          );
+        }
+      }
+
+      function generateRandomDots() {
+        // Clear previous dots
+        dots.forEach((dot) => dot.remove());
+        dots.length = 0;
+
+        // Randomly generate dots
+        for (let i = 0; i < 5; i++) {
+          let dotPosition;
+          let isOverlap;
+
+          do {
+            isOverlap = false;
+
+            dotPosition = {
+              top:
+                Math.floor(
+                  Math.random() * (gameContainer.clientHeight / 20 - 2)
+                ) *
+                  20 +
+                20,
+              left:
+                Math.floor(
+                  Math.random() * (gameContainer.clientWidth / 20 - 2)
+                ) *
+                  20 +
+                20,
+            };
+
+            // Check if dot overlaps with walls or other dots
+            if (
+              isPositionInsideMaze(dotPosition) ||
+              isPositionInsideObstacle(dotPosition)
+            ) {
+              isOverlap = true;
+            }
+          } while (isOverlap);
+
+          createDot(dotPosition.top, dotPosition.left);
+        }
+      }
+
+      function isPositionInsideMaze(position) {
+        return walls.some(
+          (wall) =>
+            position.top >= wall.offsetTop &&
+            position.top < wall.offsetTop + 40 &&
+            position.left >= wall.offsetLeft &&
+            position.left < wall.offsetLeft + 40
+        );
+      }
+
+      function isPositionInsideObstacle(position) {
+        return (
+          dots.some(
+            (dot) =>
+              position.top >= dot.offsetTop &&
+              position.top < dot.offsetTop + 20 &&
+              position.left >= dot.offsetLeft &&
+              position.left < dot.offsetLeft + 20
+          ) ||
+          walls.some(
+            (wall) =>
+              position.top >= wall.offsetTop &&
+              position.top < wall.offsetTop + 40 &&
+              position.left >= wall.offsetLeft &&
+              position.left < wall.offsetLeft + 40
+          )
+        );
+      }
+
+      generateRandomMaze();
+      generateRandomDots();
+
+      let pacmanDirection = "";
+      let pacmanAngle = 0;
+      let pacmanMoving = false;
+
+      function updatePacman() {
+        pacman.style.transform = `rotate(${pacmanAngle}deg)`;
+      }
+
+      function handleKeyPress(event) {
+        if (!pacmanMoving) {
+          pacmanMoving = true;
+          requestAnimationFrame(movePacman);
+        }
+
+        switch (event.key) {
+          case "ArrowRight":
+            pacmanDirection = "right";
+            pacmanAngle = 0;
+            break;
+          case "ArrowUp":
+            pacmanDirection = "up";
+            pacmanAngle = -90;
+            break;
+          case "ArrowLeft":
+            pacmanDirection = "left";
+            pacmanAngle = 180;
+            break;
+          case "ArrowDown":
+            pacmanDirection = "down";
+            pacmanAngle = 90;
+            break;
+        }
+      }
+
+      function movePacman() {
+        const speed = 2;
+        const currentPosition = {
+          top: pacman.offsetTop,
+          left: pacman.offsetLeft,
+        };
+
+        switch (pacmanDirection) {
+          case "right":
+            pacman.style.left = `${currentPosition.left + speed}px`;
+            break;
+          case "up":
+            pacman.style.top = `${currentPosition.top - speed}px`;
+            break;
+          case "left":
+            pacman.style.left = `${currentPosition.left - speed}px`;
+            break;
+          case "down":
+            pacman.style.top = `${currentPosition.top + speed}px`;
+            break;
+        }
+
+        checkCollisions();
+        updatePacman();
+        requestAnimationFrame(movePacman);
+      }
+
+      function checkCollisions() {
+        let pacmanRect = pacman.getBoundingClientRect();
+
+        walls.forEach((wall) => {
+          let wallRect = wall.getBoundingClientRect();
+          if (
+            pacmanRect.top < wallRect.bottom &&
+            pacmanRect.bottom > wallRect.top &&
+            pacmanRect.left < wallRect.right &&
+            pacmanRect.right > wallRect.left
+          ) {
+            gameOver();
+          }
+        });
+
+        dots.forEach((dot, index) => {
+          let dotRect = dot.getBoundingClientRect();
+          if (
+            pacmanRect.top < dotRect.bottom &&
+            pacmanRect.bottom > dotRect.top &&
+            pacmanRect.left < dotRect.right &&
+            pacmanRect.right > dotRect.left
+          ) {
+            dot.remove();
+            dots.splice(index, 1);
+            createDot(
+              Math.floor(
+                Math.random() * (gameContainer.clientHeight / 20 - 2)
+              ) *
+                20 +
+                20,
+              Math.floor(Math.random() * (gameContainer.clientWidth / 20 - 2)) *
+                20 +
+                20
+            );
+            updateScore(10);
+          }
+        });
+
+        if (dots.length === 0) {
+          alert("Congratulations! You collected all the dots.");
+          generateRandomMaze();
+          generateRandomDots();
+          resetPacman();
+        }
+      }
+
+      function gameOver() {
+        alert("Game Over! Pac-Man hit a wall. Your final score: " + score);
+        generateRandomMaze();
+        generateRandomDots();
+        resetPacman();
+        resetScore();
+      }
+
+      function resetPacman() {
+        pacman.style.top = "80px";
+        pacman.style.left = "80px";
+      }
+
+      function updateScore(points) {
+        score += points;
+        scoreElement.textContent = "Score: " + score;
+      }
+
+      function resetScore() {
+        score = 0;
+        scoreElement.textContent = "Score: " + score;
+      }
+
+      document.addEventListener("keydown", handleKeyPress);
+    </script>
+  </body>
+</html>
