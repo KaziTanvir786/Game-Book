@@ -1,1 +1,1 @@
-[Visit Site]([readme.com](https://kazitanvir786.github.io/Game-Book/)https://kazitanvir786.github.io/Game-Book/)
+[Visit Site](https://kazitanvir786.github.io/Game-Book/)
