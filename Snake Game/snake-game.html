@@ -7,7 +7,7 @@
     <style>
       body {
         display: flex;
-        justify-content: center;
+        flex-direction: column;
         align-items: center;
         height: 100vh;
         margin: 0;
@@ -57,30 +57,28 @@
         border: none;
         border-radius: 5px;
       }
-      body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        background-color: #f5f5f5;
-        overflow: hidden;
-      }
 
       #container {
         display: flex;
         flex-direction: column;
         align-items: center;
+        margin-top: ;
       }
 
       #start-button,
       #back-button {
         margin-top: 20px; /* Adjust the margin as needed */
       }
+      #score-count {
+        padding-top: 20px;
+        height: 40px;
+        font-size: 20px;
+      }
     </style>
   </head>
   <body>
     <div id="container">
+      <div id="score-count"></div>
       <canvas id="snakeCanvas" width="400" height="400"></canvas>
 
       <div id="game-over-modal">
@@ -104,6 +102,7 @@
       document.addEventListener("DOMContentLoaded", function () {
         const canvas = document.getElementById("snakeCanvas");
         const ctx = canvas.getContext("2d");
+        const scoreBoard = document.getElementById("score-count");
 
         const boxSize = 20;
         const canvasSize = 400;
@@ -112,6 +111,48 @@
         let food = { x: 15, y: 15 };
         let direction = "right";
         let score = 0;
+
+        // Handle arrow key presses
+        let canChangeDirection = true;
+
+        document.addEventListener("keydown", function (event) {
+          if (!canChangeDirection) {
+            return;
+          }
+
+          let newDirection;
+
+          switch (event.key) {
+            case "ArrowUp":
+              newDirection = "up";
+              break;
+            case "ArrowDown":
+              newDirection = "down";
+              break;
+            case "ArrowLeft":
+              newDirection = "left";
+              break;
+            case "ArrowRight":
+              newDirection = "right";
+              break;
+          }
+
+          // Check if the new direction is valid (not opposite to the current direction)
+          if (
+            (newDirection === "up" && direction !== "down") ||
+            (newDirection === "down" && direction !== "up") ||
+            (newDirection === "left" && direction !== "right") ||
+            (newDirection === "right" && direction !== "left")
+          ) {
+            direction = newDirection;
+            canChangeDirection = false;
+
+            // Allow direction change after a delay
+            setTimeout(() => {
+              canChangeDirection = true;
+            }, 50);
+          }
+        });
 
         function draw() {
           ctx.clearRect(0, 0, canvasSize, canvasSize);
@@ -134,7 +175,8 @@
           // Draw score
           ctx.fillStyle = "#333333";
           ctx.font = "20px Arial";
-          ctx.fillText("Score: " + score, 20, 30);
+          // ctx.fillText("Score: " + score, 20, 30);
+          scoreBoard.innerHTML = `Score : ${score}`;
         }
 
         function move() {
@@ -236,36 +278,6 @@
         // Set initial food position
         generateFood();
 
-        // Handle arrow key presses
-        document.addEventListener("keydown", function (event) {
-          let newDirection;
-
-          switch (event.key) {
-            case "ArrowUp":
-              newDirection = "up";
-              break;
-            case "ArrowDown":
-              newDirection = "down";
-              break;
-            case "ArrowLeft":
-              newDirection = "left";
-              break;
-            case "ArrowRight":
-              newDirection = "right";
-              break;
-          }
-
-          // Check if the new direction is valid (not opposite to the current direction)
-          if (
-            (newDirection === "up" && direction !== "down") ||
-            (newDirection === "down" && direction !== "up") ||
-            (newDirection === "left" && direction !== "right") ||
-            (newDirection === "right" && direction !== "left")
-          ) {
-            direction = newDirection;
-          }
-        });
-
         // Handle reset button click
         const resetButton = document.getElementById("reset-button");
         resetButton.addEventListener("click", resetGame);
@@ -276,6 +288,7 @@
         function startGame() {
           if (!gameStarted) {
             gameStarted = true;
+            document.getElementById("start-button").disabled = true; // Disable the start button
             gameLoop(); // Initiate the game loop
           }
         }
